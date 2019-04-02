@@ -58,10 +58,10 @@ def get_model(num_users, num_items, layers=None, reg_layers=None):
     user_input = Input(shape=(1,), dtype='int32', name='user_input')
     item_input = Input(shape=(1,), dtype='int32', name='item_input')
 
-    MLP_Embedding_User = Embedding(input_dim=num_users, output_dim=layers[0] / 2, name='user_embedding',
+    MLP_Embedding_User = Embedding(input_dim=num_users, output_dim=layers[0] // 2, name='user_embedding',
                                    embeddings_initializer='random_normal', embeddings_regularizer=l2(reg_layers[0]),
                                    input_length=1)
-    MLP_Embedding_Item = Embedding(input_dim=num_items, output_dim=layers[0] / 2, name='item_embedding',
+    MLP_Embedding_Item = Embedding(input_dim=num_items, output_dim=layers[0] // 2, name='item_embedding',
                                    embeddings_initializer='random_normal', embeddings_regularizer=l2(reg_layers[0]),
                                    input_length=1)
 
@@ -75,14 +75,14 @@ def get_model(num_users, num_items, layers=None, reg_layers=None):
 
     # MLP layers
     for idx in range(1, num_layer):
-        layer = Dense(layers[idx], W_regularizer=l2(reg_layers[idx]), activation='relu', name='layer%d' % idx)
+        layer = Dense(layers[idx], kernel_regularizer=l2(reg_layers[idx]), activation='relu', name='layer%d' % idx)
         vector = layer(vector)
 
     # Final prediction layer
     prediction = Dense(1, activation='sigmoid', kernel_initializer='lecun_uniform', name='prediction')(vector)
 
-    model = Model(input=[user_input, item_input],
-                  output=prediction)
+    model = Model(inputs=[user_input, item_input],
+                  outputs=prediction)
 
     return model
 
@@ -159,7 +159,7 @@ if __name__ == '__main__':
         # Training
         hist = model.fit([np.array(user_input), np.array(item_input)],  # input
                          np.array(labels),  # labels
-                         batch_size=batch_size, nb_epoch=1, verbose=0, shuffle=True)
+                         batch_size=batch_size, epochs=1, verbose=0, shuffle=True)
         t2 = time()
 
         # Evaluation

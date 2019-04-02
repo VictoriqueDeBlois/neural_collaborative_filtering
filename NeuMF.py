@@ -34,7 +34,8 @@ def parse_args():
     parser.add_argument('--num_factors', type=int, default=8,
                         help='Embedding size of MF model.')
     parser.add_argument('--layers', nargs='?', default='[64,32,16,8]',
-                        help="MLP layers. Note that the first layer is the concatenation of user and item embeddings. So layers[0]/2 is the embedding size.")
+                        help="MLP layers. Note that the first layer is the concatenation of user and item embeddings. "
+                             "So layers[0]/2 is the embedding size.")
     parser.add_argument('--reg_mf', type=float, default=0,
                         help='Regularization for MF embeddings.')
     parser.add_argument('--reg_layers', nargs='?', default='[0,0,0,0]',
@@ -69,14 +70,16 @@ def get_model(num_users, num_items, mf_dim=10, layers=None, reg_layers=None, reg
 
     # Embedding layer
     MF_Embedding_User = Embedding(input_dim=num_users, output_dim=mf_dim, name='mf_embedding_user',
-                                  embeddings_initializer='random_normal', embeddings_regularizer=l2(reg_mf), input_length=1)
+                                  embeddings_initializer='random_normal', embeddings_regularizer=l2(reg_mf),
+                                  input_length=1)
     MF_Embedding_Item = Embedding(input_dim=num_items, output_dim=mf_dim, name='mf_embedding_item',
-                                  embeddings_initializer='random_normal', embeddings_regularizer=l2(reg_mf), input_length=1)
+                                  embeddings_initializer='random_normal', embeddings_regularizer=l2(reg_mf),
+                                  input_length=1)
 
-    MLP_Embedding_User = Embedding(input_dim=num_users, output_dim=layers[0] / 2, name="mlp_embedding_user",
+    MLP_Embedding_User = Embedding(input_dim=num_users, output_dim=layers[0] // 2, name="mlp_embedding_user",
                                    embeddings_initializer='random_normal', embeddings_regularizer=l2(reg_layers[0]),
                                    input_length=1)
-    MLP_Embedding_Item = Embedding(input_dim=num_items, output_dim=layers[0] / 2, name='mlp_embedding_item',
+    MLP_Embedding_Item = Embedding(input_dim=num_items, output_dim=layers[0] // 2, name='mlp_embedding_item',
                                    embeddings_initializer='random_normal', embeddings_regularizer=l2(reg_layers[0]),
                                    input_length=1)
 
@@ -93,7 +96,7 @@ def get_model(num_users, num_items, mf_dim=10, layers=None, reg_layers=None, reg
     mlp_vector = merge.concatenate([mlp_user_latent, mlp_item_latent])
 
     for idx in range(1, num_layer):
-        layer = Dense(layers[idx], W_regularizer=l2(reg_layers[idx]), activation='relu', name="layer%d" % idx)
+        layer = Dense(layers[idx], kernel_regularizer=l2(reg_layers[idx]), activation='relu', name="layer%d" % idx)
         mlp_vector = layer(mlp_vector)
 
     # Concatenate MF and MLP parts
@@ -103,10 +106,10 @@ def get_model(num_users, num_items, mf_dim=10, layers=None, reg_layers=None, reg
     predict_vector = merge.concatenate([mf_vector, mlp_vector])
 
     # Final prediction layer
-    prediction = Dense(1, activation='sigmoid', init='lecun_uniform', name="prediction")(predict_vector)
+    prediction = Dense(1, activation='sigmoid', kernel_initializer='lecun_uniform', name="prediction")(predict_vector)
 
-    model = Model(input=[user_input, item_input],
-                  output=prediction)
+    model = Model(inputs=[user_input, item_input],
+                  outputs=prediction)
 
     return model
 
@@ -222,7 +225,7 @@ if __name__ == '__main__':
         # Training
         hist = model.fit([np.array(user_input), np.array(item_input)],  # input
                          np.array(labels),  # labels
-                         batch_size=batch_size, nb_epoch=1, verbose=0, shuffle=True)
+                         batch_size=batch_size, epochs=1, verbose=0, shuffle=True)
         t2 = time()
 
         # Evaluation
